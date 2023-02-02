@@ -11,24 +11,125 @@ output: github_document
 library(tidyverse) 
 library(dsbox)
 library(mosaicData) 
+library(gghighlight)
+library(geomtextpath)
 ```
 
-### Exercise 1
+### Exercise 1 & 2
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r employ, width = 10}
+staff <- read_csv("data/instructional-staff.csv")
 
-### Exercise 2
+staff_long <- staff %>%
+  pivot_longer(cols = -faculty_type, names_to = "year") %>%
+  mutate(value = as.numeric(value))
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+staff_long %>%
+  ggplot(aes(x = year,
+             y = value,
+             group = faculty_type,
+             color = faculty_type))+
+  geom_line()+
+   gghighlight(faculty_type == "Part-Time Faculty", use_direct_label = FALSE, unhighlighted_params = aes(color = NULL, alpha = 0.2), keep_scales = TRUE)+
+  labs(
+    title = "Trends in Instructional Staff Employment Status, 1975-2011",
+    subtitle = "All Institutions, National Totals",
+    y = "Percent of Total Instructional Staff"
+  )+
+  scale_color_discrete(name  ="faculty type")
+# I highlighted the part-time compared to others so that it is more salient in the graph. 
+
+```
+
 
 ### Exercise 3
 
-...
+I want to find a better way to filter the country variable so that it looks cleaner the plot. Also, I want to overlap two variables in the same plot for the easy of comparison. 
 
-Add exercise headings as needed.
+```{r Fisheries, width = 5}
+fisheries <- read_csv("data/fisheries.csv")
+
+fisheries %>%
+  filter (total > 1000000) %>%
+  ggplot()+
+  geom_col(aes(y=reorder(country,total), x= total,fill = "total"))+
+  geom_col(aes(y=reorder(country,total), x= aquaculture,fill = "aquaculture"))
+
+fisheries %>%
+  filter (total > 1000000) %>%
+  ggplot()+
+  geom_col(aes(y=reorder(country,total), x= total,fill = "total"))+
+  geom_col(aes(y=reorder(country,total), x= capture,fill = "capture"))
+
+fisheries %>%
+  filter (total > 1000000) %>%
+  ggplot()+
+  geom_col(aes(y=reorder(country,total), x= capture,fill = "capture"))+
+  geom_col(aes(y=reorder(country,total), x= aquaculture,fill = "aquaculture", alpha = 0.5))
+
+
+
+
+```
+
+### Exercise 1 (Wickham)
+
+This is observational data because there is no experimental manipulation in this study. 
+
+```{r data_input, echo=FALSE}
+whickham <- force(data(Whickham))
+```
+
+
+### Exercise 2 (Wickham)
+
+There are 1314 pieces of observation and they each represent a single individual. 
+```{r whickham_dim}
+dim(Whickham)
+head(Whickham)
+```
+
+### Exercise 3 (Wickham)
+
+There are 3 variables. Outcome and smoker are discret variables while age is a continuous variable.
+
+```{r whickham_vars}
+ncol(Whickham)
+
+Whickham %>%
+  ggplot(aes(x=outcome, fill = smoker))+
+  geom_bar()
+
+Whickham %>%
+  ggplot(aes(x=age))+
+  geom_density()
+```
+
+### Exercise 4 (Wickham)
+
+I would expect the relationship between smoking status and health outcome to be positive.
+
+```{r cor}
+chisq.test(Whickham$outcome,Whickham$smoker)
+```
+
+
+### Exercise 5 (Wickham)
+
+```{r age_cat}
+
+Whickham$age_cat <- ifelse(Whickham$age <= 44, "18-44", 
+                           ifelse((Whickham$age > 44& Whickham$age <= 64),"45-64","65+"))
+
+```
+
+### Exercise 6 (Wickham)
+
+```{r age_dif}
+Whickham %>%
+  count(smoker, age_cat, outcome)%>%
+  ggplot(aes(x=outcome, y = n, fill = smoker))+
+  geom_bar(stat = "identity")+
+  facet_grid(cols = vars(age_cat))
+```
+
